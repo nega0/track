@@ -19,6 +19,7 @@ if (!$ARGV[0]) {
   exit 1;
 }
 
+## usps sample numbers are at https://tools.usps.com/
 switch($ARGV[0]) {
   case /^\d{12,}$/        { $json_text = fedex($ARGV[0]); }
   case /^1Z[0-9A-Za-z]+$/ { die "Looks like UPS. I only understand FedEx."; }
