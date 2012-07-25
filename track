@@ -1,0 +1,64 @@
+#! /usr/bin/perl -w
+
+# track a fedex shipment
+#
+# source is public domain
+
+use LWP::UserAgent;
+use HTTP::Request::Common;
+#use Smart::Comments;
+use JSON;
+use Switch;
+use strict;
+
+my $FEDEX_URL="http://www.fedex.com/Tracking?action=track&language=english&tracknumbers=";
+my $json_text = undef;
+
+if (!$ARGV[0]) {
+  print "usage: $0 <tracking number>\n";
+  exit 1;
+}
+
+switch($ARGV[0]) {
+  case /^\d{12,}$/        { $json_text = fedex($ARGV[0]); }
+  case /^1Z[0-9A-Za-z]+$/ { die "Looks like UPS. I only understand FedEx."; }
+  case /^\d{11}$/         { die "Looks like Purolator. I only understand FedEx."; }
+  die "Unknown tracking number";
+}
+die "Unknown error" if (!defined $json_text);
+
+my $s = decode_json( $json_text );
+# ## ps: $s->{'scans'}[0]->{'scanStatus'}
+foreach my $f ( @{$s->{'scans'}} ) {
+  print $f->{'scanStatus'}
+    . " "
+    . $f->{'scanLocation'}
+    . " on "
+    . $f->{'scanDate'}
+    . " at "
+    . $f->{'scanTime'};
+  if (defined $f->{'scanComments'}) {
+    print " (" . $f->{'scanComments'} . ")"; }
+  print "\n";
+}
+
+sub fedex {
+  ## all the info we need is currently stored json in a variable on
+  ## the tracking page
+
+  my $tn = shift;
+  my $ua = new LWP::UserAgent;
+  my $req = new HTTP::Request GET => $FEDEX_URL . $tn;
+  my $res = $ua->request($req);
+
+  if ($res->is_success) {
+    my $j = undef;
+    foreach my $k (split /\n/, ${$res->content_ref}) {
+      ## this will give us just the json object
+      last if (($j = $k) =~ s/^var detailInfoObject = (.*);$/$1/);
+    }
+    return $j;
+  } else {
+    return undef;
+  }
+}
