@@ -30,13 +30,14 @@ die "Unknown error" if (!defined $json_text);
 my $s = decode_json( $json_text );
 # ## ps: $s->{'scans'}[0]->{'scanStatus'}
 foreach my $f ( @{$s->{'scans'}} ) {
-  print $f->{'scanStatus'}
-    . " "
-    . $f->{'scanLocation'}
-    . " on "
-    . $f->{'scanDate'}
-    . " at "
-    . $f->{'scanTime'};
+  print $f->{'scanStatus'};
+  if (defined $f->{'scanLocation'}) {
+    print " " .$f->{'scanLocation'};
+  }
+  print " on ";
+  print $f->{'scanDate'};
+  print " at ";
+  print $f->{'scanTime'};;
   if (defined $f->{'scanComments'}) {
     print " (" . $f->{'scanComments'} . ")"; }
   print "\n";
